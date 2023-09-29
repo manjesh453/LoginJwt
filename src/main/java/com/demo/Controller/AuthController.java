@@ -15,12 +15,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.demo.Dto.AuthResponseDto;
 import com.demo.Dto.LoginDto;
 import com.demo.Dto.RegisterDto;
 import com.demo.Repository.RoleRepository;
 import com.demo.Repository.UserRepository;
 import com.demo.entity.Role;
 import com.demo.entity.UserEntity;
+import com.demo.security.JWTGenerator;
 
 @RestController
 @RequestMapping("api/auth")
@@ -30,11 +32,12 @@ public class AuthController {
 	private RoleRepository roleRepository;
 	private PasswordEncoder passwordEncoder;
 	private AuthenticationManager authenticationManager;
+	private JWTGenerator jwtGenerator;
 	
 	@Autowired
 	public AuthController(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder,
-			AuthenticationManager authenticationManager) {
-		super();
+			AuthenticationManager authenticationManager,JWTGenerator jwtGenerator) {
+		this.jwtGenerator=jwtGenerator;
 		this.userRepository = userRepository;
 		this.roleRepository = roleRepository;
 		this.passwordEncoder = passwordEncoder;
@@ -58,11 +61,12 @@ public class AuthController {
 	}
 	
 	@PostMapping("/login")
-	public ResponseEntity<String>login(@RequestBody LoginDto loginDto){
+	public ResponseEntity<AuthResponseDto>login(@RequestBody LoginDto loginDto){
 		Authentication authentication=authenticationManager.authenticate(
 				new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
 		SecurityContextHolder.getContext().setAuthentication(authentication);
-		return new ResponseEntity<>("User login Successfully",HttpStatus.OK);
+		String token=jwtGenerator.generateToken(authentication);
+		return new ResponseEntity<>(new AuthResponseDto(token),HttpStatus.OK);
 		
 	}
 	
